@@ -216,10 +216,25 @@ class EnqueuedJobsTest < ActiveJob::TestCase
     end
   end
 
+  def test_assert_enqueued_job_with_no_block
+    LoggingJob.set(wait_until: Date.tomorrow.noon).perform_later
+    assert_enqueued_with(job: LoggingJob, queue: "default")
+  end
+
   def test_assert_enqueued_job_returns
     job = assert_enqueued_with(job: LoggingJob) do
       LoggingJob.set(wait_until: 5.minutes.from_now).perform_later(1, 2, 3)
     end
+
+    assert_instance_of LoggingJob, job
+    assert_in_delta 5.minutes.from_now, job.scheduled_at, 1
+    assert_equal "default", job.queue_name
+    assert_equal [1, 2, 3], job.arguments
+  end
+
+  def test_assert_enqueued_job_returns_with_no_block
+    LoggingJob.set(wait_until: 5.minutes.from_now).perform_later(1, 2, 3)
+    job = assert_enqueued_with(job: LoggingJob)
 
     assert_instance_of LoggingJob, job
     assert_in_delta 5.minutes.from_now, job.scheduled_at, 1
@@ -243,11 +258,32 @@ class EnqueuedJobsTest < ActiveJob::TestCase
     assert_equal 'No enqueued job found with {:job=>NestedJob, :queue=>"low"}', error.message
   end
 
+  def test_assert_enqueued_job_failure_with_no_block
+    assert_raise ActiveSupport::TestCase::Assertion do
+      NestedJob.perform_later
+      assert_enqueued_with(job: LoggingJob, queue: "default")
+    end
+
+    error = assert_raise ActiveSupport::TestCase::Assertion do
+      NestedJob.perform_later
+      assert_enqueued_with(job: NestedJob, queue: "low")
+    end
+
+    assert_equal 'No enqueued job found with {:job=>NestedJob, :queue=>"low"}', error.message
+  end
+
   def test_assert_enqueued_job_args
     assert_raise ArgumentError do
       assert_enqueued_with(class: LoggingJob) do
         NestedJob.set(wait_until: Date.tomorrow.noon).perform_later
       end
+    end
+  end
+
+  def test_assert_enqueued_job_args_with_no_block
+    assert_raise ArgumentError do
+      NestedJob.set(wait_until: Date.tomorrow.noon).perform_later
+      assert_enqueued_with(class: LoggingJob)
     end
   end
 
@@ -257,11 +293,22 @@ class EnqueuedJobsTest < ActiveJob::TestCase
     end
   end
 
+  def test_assert_enqueued_job_with_at_option_with_no_block
+    HelloJob.set(wait_until: Date.tomorrow.noon).perform_later
+    assert_enqueued_with(job: HelloJob, at: Date.tomorrow.noon)
+  end
+
   def test_assert_enqueued_job_with_global_id_args
     ricardo = Person.new(9)
     assert_enqueued_with(job: HelloJob, args: [ricardo]) do
       HelloJob.perform_later(ricardo)
     end
+  end
+
+  def test_assert_enqueued_job_with_global_id_args_with_no_block
+    ricardo = Person.new(9)
+    HelloJob.perform_later(ricardo)
+    assert_enqueued_with(job: HelloJob, args: [ricardo])
   end
 
   def test_assert_enqueued_job_failure_with_global_id_args
@@ -271,6 +318,17 @@ class EnqueuedJobsTest < ActiveJob::TestCase
       assert_enqueued_with(job: HelloJob, args: [wilma]) do
         HelloJob.perform_later(ricardo)
       end
+    end
+
+    assert_equal "No enqueued job found with {:job=>HelloJob, :args=>[#{wilma.inspect}]}", error.message
+  end
+
+  def test_assert_enqueued_job_failure_with_global_id_args_with_no_block
+    ricardo = Person.new(9)
+    wilma = Person.new(11)
+    error = assert_raise ActiveSupport::TestCase::Assertion do
+      HelloJob.perform_later(ricardo)
+      assert_enqueued_with(job: HelloJob, args: [wilma])
     end
 
     assert_equal "No enqueued job found with {:job=>HelloJob, :args=>[#{wilma.inspect}]}", error.message
