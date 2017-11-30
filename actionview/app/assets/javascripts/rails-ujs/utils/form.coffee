@@ -7,6 +7,7 @@ toArray = (e) -> Array.prototype.slice.call(e)
 Rails.serializeElement = (element, additionalParam) ->
   inputs = [element]
   inputs = toArray(element.elements) if matches(element, 'form')
+
   params = []
 
   inputs.forEach (input) ->

@@ -42,6 +42,17 @@ Rails.handleRemote = (e) ->
     setData(element, 'ujs:submit-button', null)
     setData(element, 'ujs:submit-button-formmethod', null)
     setData(element, 'ujs:submit-button-formaction', null)
+  else if matches(element, 'input[data-remote][type=file]')
+    method = element.getAttribute('data-method')
+    url = element.getAttribute('data-url')
+    data = new FormData()
+    Array.prototype.slice.call(element.files).forEach (file) ->
+      data.append(element.name, file)
+
+    element.getAttribute('data-params')?.split(/&/).map (param) ->
+      [key, value] = param.split(/=/)
+      data.append(key, value)
+
   else if matches(element, Rails.buttonClickSelector) or matches(element, Rails.inputChangeSelector)
     method = element.getAttribute('data-method')
     url = element.getAttribute('data-url')
