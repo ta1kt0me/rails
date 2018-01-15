@@ -9,4 +9,9 @@ namespace :active_storage do
       Rake::Task["app:active_storage:install:migrations"].invoke
     end
   end
+
+  desc "Clear storage"
+  task clear: :environment do
+    puts "foo"
+  end
 end
