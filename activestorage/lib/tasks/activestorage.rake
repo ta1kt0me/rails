@@ -16,4 +16,6 @@ namespace :active_storage do
   end
 end
 
-Rake::Task["active_storage:clear"].enhance ["db:migrate:status"]
+Rake::Task["db:migrate:status"].enhance do
+  Rake::Task["active_storage:clear"].invoke
+end
