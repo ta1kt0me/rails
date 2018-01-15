@@ -15,3 +15,5 @@ namespace :active_storage do
     puts "foo"
   end
 end
+
+Rake::Task["active_storage:clear"].enhance ["db:migrate:status"]
